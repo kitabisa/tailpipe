@@ -5,17 +5,11 @@
 package tailpipe
 
 import (
-	"errors"
 	"io"
 	"os"
 	"sync"
 	"time"
 )
-
-// The Follow function allows for the creation of a File with an underlying
-// stream that may not implement all interfaces which a File implements. Such
-// Files will return ErrNotSupported when this is the case.
-var ErrNotSupported = errors.New("Operation not supported by underlying stream")
 
 // A File represents an open normal file. A File is effectively of infinite
 // length; all reads to the file will block until data are available,
@@ -102,6 +96,16 @@ func Open(path string) (*File, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	if !fi.Mode().IsRegular() {
+		return nil, ErrNotRegularFile
+	}
+
 	return Follow(f), err
 }
 
