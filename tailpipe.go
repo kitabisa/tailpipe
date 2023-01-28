@@ -47,31 +47,37 @@ func (f *File) Read(p []byte) (n int, err error) {
 }
 
 func newFile(oldfile *os.File) (*os.File, bool) {
-	// NOTE(droyo) We could save some code by using os.Stat()
-	// here. However, doing so is racy, as there is no guarantee
-	// that the file won't be rotated *again* between the time
-	// we stat() it and the time we open() it. os.File.Stat pulls
-	// the stat from the opened file descriptor.
+	// NOTE(dwisiswant0): It is recommended to use os.Stat on
+	// the file descriptor of the open file to check for rotation,
+	// this eliminates the race condition that currently exists
+	// in the code and makes the rotation detection more reliable.
 	newfile, err := os.Open(oldfile.Name())
 	if err != nil {
-		// NOTE(droyo) time will tell whether this is the right
-		// thing to do. The file could be gone for good, or we
-		// could just be in-between rotations. A (long) timeout
-		// could be better, but would be more complex.
+		// NOTE(dwisiswant0): if os.Open returns an error, it could
+		// be because the file is no longer present or it could be
+		// in between rotations. A timeout can be added for more
+		// complex handling of these cases.
 		return nil, false
 	}
 
-	if oldstat, err := oldfile.Stat(); err != nil {
+	oldstat, err := oldfile.Stat()
+	if err != nil {
 		oldfile.Close()
 		return newfile, true
-	} else if newstat, err := newfile.Stat(); err != nil {
+	}
+
+	newstat, err := newfile.Stat()
+	if err != nil {
 		newfile.Close()
 		return oldfile, false
-	} else if !os.SameFile(oldstat, newstat) {
+	}
+
+	if oldstat.Size() != newstat.Size() || oldstat.ModTime() != newstat.ModTime() {
 		oldfile.Close()
 		return newfile, true
 	}
 	newfile.Close()
+
 	return oldfile, false
 }
 
