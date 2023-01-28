@@ -7,23 +7,8 @@ package tailpipe
 import (
 	"io"
 	"os"
-	"sync"
 	"time"
 )
-
-// A File represents an open normal file. A File is effectively of infinite
-// length; all reads to the file will block until data are available,
-// even if EOF on the underlying file is reached.
-//
-// The tailpipe package will attempt to detect when a file has been
-// rotated. Programs that wish to be notified when such a rotation occurs
-// should receive from the Rotated channel.
-type File struct {
-	r       io.Reader
-	Rotated <-chan struct{}
-	mu      sync.RWMutex
-	rc      chan struct{}
-}
 
 // Read reads up to len(p) bytes into p. If end-of-file is reached, Read
 // will block until new data are available. Read returns the number of
