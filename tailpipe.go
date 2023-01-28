@@ -40,10 +40,12 @@ type File struct {
 // re-open the file at the original path provided to Open. Re-opening
 // does not occur until the old file is exhausted.
 func (f *File) Read(p []byte) (n int, err error) {
+	tick := time.Tick(time.Millisecond * 100)
+
 	for {
 		n, err = f.r.Read(p)
 		if n == 0 && err == io.EOF {
-			time.Sleep(time.Millisecond * 100)
+			<-tick
 			if file, ok := f.r.(*os.File); ok {
 				if file, ok = newFile(file); ok {
 					select {
