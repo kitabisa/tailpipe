@@ -21,7 +21,7 @@ import (
 type File struct {
 	r       io.Reader
 	Rotated <-chan struct{}
-	mu      sync.Mutex
+	mu      sync.RWMutex
 	rc      chan struct{}
 }
 
@@ -157,9 +157,11 @@ func (f *File) Close() error {
 		close(f.rc)
 		f.rc = nil
 	}
+
 	f.mu.Unlock()
 	if v, ok := f.r.(io.ReadCloser); ok {
 		return v.Close()
 	}
+
 	return ErrNotSupported
 }
