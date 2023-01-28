@@ -54,6 +54,8 @@ func (f *File) Read(p []byte) (n int, err error) {
 					}
 					f.r = file
 				}
+			} else {
+				return 0, ErrNotSupported
 			}
 		} else {
 			break
